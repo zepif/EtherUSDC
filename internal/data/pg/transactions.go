@@ -4,7 +4,7 @@ import (
     "database/sql"
     sq "github.com/Masterminds/squirrel"
     "gitlab.com/distributed_lab/kit/pgdb"
-    "gitlab.com/your-project/internal/data"
+    "github.com/zepif/EtherUSDC/internal/data"
 )
 
 const uscTransactionsTable = "usdcTransactions"
