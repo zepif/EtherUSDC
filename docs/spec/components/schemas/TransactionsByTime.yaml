@@ -1,0 +1,11 @@
+allOf:
+  - $ref: '#/components/schemas/TransactionsByTimeKey'
+  - type: object
+    required:
+      - transactions
+    properties:
+      transactions:
+        type: array
+        items:
+          $ref: '#/components/schemas/Transaction'
+

@@ -1,0 +1,13 @@
+type: object
+properties:
+  from:
+    type: string
+    description: "Filter by sender address"
+    example: "0xabcdef123456789"
+  to:
+    type: string
+    description: "Filter by receiver address"
+    example: "0x789abcdef123456"
+required:
+  - fromAddress
+  - toAddress

@@ -1,0 +1,9 @@
+type: object
+required:
+  - txHash
+properties:
+  txHash:
+    type: string
+    description: "Hash of the transaction"
+    example: "0x123456789abcdef"
+

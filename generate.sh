@@ -3,8 +3,8 @@
 GENERATOR_IMAGE=tokend/openapi-generator:v0.1.0
 
 
-GENERATED="${GOPATH}/src/github.com/zepif/EtherUSDC/resources"
-OPENAPI_DIR="${GOPATH}/src/github.com/zepif/EtherUSDC/docs/web_deploy"
+GENERATED="${GOPATH}/src/gitlab.com/zepif/EtherUSDC/resources"
+OPENAPI_DIR="${GOPATH}/src/gitlab.com/zepif/EtherUSDC/docs/web_deploy"
 PACKAGE_NAME=resources
 
 function printHelp {

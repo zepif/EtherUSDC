@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"gitlab.com/distributed_lab/logan/v3"
-    "github.com/zepif/Test-service/internal/data"
+    "github.com/zepif/EtherUSDC/internal/data"
 )
 
 type ctxKey int

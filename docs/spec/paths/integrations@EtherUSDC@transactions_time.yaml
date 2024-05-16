@@ -1,0 +1,41 @@
+parameters:
+  - name: startTime
+    in: query
+    description: Start time of the filter range
+    required: true
+    schema:
+      type: integer
+      format: int64
+  - name: endTime
+    in: query
+    description: End time of the filter range
+    required: true
+    schema:
+      type: integer
+      format: int64
+
+get:
+  tags:
+    - Transactions
+  summary: Get Transactions by Time Range
+  description: Retrieve USDC transactions filtered by a specified time range
+  operationId: getTransactionsByTime
+  responses:
+    '200':
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+    '400':
+      description: Invalid Request
+    '401':
+      description: Not Allowed
+    '500':
+      description: Internal Error
+

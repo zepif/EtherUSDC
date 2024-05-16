@@ -1,0 +1,37 @@
+parameters:
+  - name: from
+    in: query
+    description: Filter by sender address
+    schema:
+      type: string
+  - name: to
+    in: query
+    description: Filter by receiver address
+    schema:
+      type: string
+
+get:
+  tags:
+    - Transactions
+  summary: List Transactions
+  description: Retrieve a list of USDC transactions filtered by sender or receiver address
+  operationId: listTransactions
+  responses:
+    '200':
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+    '400':
+      description: Invalid Request
+    '401':
+      description: Not Allowed
+    '500':
+      description: Internal Error
+
