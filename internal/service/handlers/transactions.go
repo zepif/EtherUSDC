@@ -70,11 +70,11 @@ func GetTransaction(w http.ResponseWriter, r *http.Request) {
     }
 
    log.WithFields(logan.F{
-        "txHash":      (*tx).txHash,
-        "fromAddress": (*tx).fromAddress,
-        "toAddress":   (*tx).toAddress,
-        "value":       (*tx).values,
-        "timestamp":   (*tx).timestamp,
+        "txHash":      (*tx).TxHash,
+        "fromAddress": (*tx).FromAddress,
+        "toAddress":   (*tx).ToAddress,
+        "value":       (*tx).Values,
+        "timestamp":   (*tx).Timestamp,
     }).Info("transaction retrieved")
 
     ape.Render(w, *tx)
@@ -82,17 +82,17 @@ func GetTransaction(w http.ResponseWriter, r *http.Request) {
 
 func ListTransactions(w http.ResponseWriter, r *http.Request) {
     log := Log(r)
-    d := DB(r)
+    d := DB(r).TransactionQ()
 
     fromAddress := r.URL.Query().Get("fromAddress")
     toAddress := r.URL.Query().Get("toAddress")
     var filters []data.TransactionFilter
     if fromAddress != "" {
-        d = d.TransactionQ().FilterByFromAddress(fromAddress)
+        d = d.FilterByFromAddress(fromAddress)
     }
 
     if toAddress != "" {
-        d = d.TransactionQ().FilterByToAddress(toAddress)
+        d = d.FilterByToAddress(toAddress)
     }
 
     log.WithFields(logan.F{

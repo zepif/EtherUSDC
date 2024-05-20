@@ -11,11 +11,11 @@ type TransactionQ interface {
 }
 
 type Transaction struct {
-    txHash      string  `db:"txHash" structs:"txHash"`
-    fromAddress string  `db:"fromAddress" structs:"fromAddress"`
-    toAddress   string  `db:"toAddress" structs:"toAddress"`
-    values      float64 `db:"value" structs:"value"`
-    timestamp   int64   `db:"timestamp" structs:"timestamp"`
+    TxHash      string  `db:"txHash" structs:"txHash"`
+    FromAddress string  `db:"fromAddress" structs:"fromAddress"`
+    ToAddress   string  `db:"toAddress" structs:"toAddress"`
+    Values      float64 `db:"value" structs:"value"`
+    Timestamp   int64   `db:"timestamp" structs:"timestamp"`
 }
 
 type TransactionFilter func(TransactionQ) TransactionQ
