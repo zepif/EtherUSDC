@@ -8,6 +8,8 @@ import (
 	"gitlab.com/distributed_lab/kit/copus/types"
 	"gitlab.com/distributed_lab/logan/v3"
 	"gitlab.com/distributed_lab/logan/v3/errors"
+    "github.com/zepif/EtherUSDC/internal/service/eth"
+    "github.com/zepif/EtherUSDC/internal/service/workers"
 )
 
 type service struct {
@@ -36,6 +38,22 @@ func newService(cfg config.Config) *service {
 }
 
 func Run(cfg config.Config) {
+    log := cfg.Log()
+    db := pg.NewStorage(cfg.DB())
+
+    ethClient, err := eth.NewEthClient(cfg.EthRPC(), cfg.EthContractAddress(), cfg.EthContractABI())
+    if err != nil {
+        log.WithError(err).Fatal("failed to create Ethereum client")
+    }
+
+    transactionWorker := workers.NewTransactionWorker(log, db, ethClient)
+    err = transactionWorker.Start()
+    if err != nil {
+        log.WithError(err).Fatal("failed to start transaction worker")
+    }
+    defer transactionWorker.Stop()
+
+
 	if err := newService(cfg).run(cfg); err != nil {
 		panic(err)
 	}

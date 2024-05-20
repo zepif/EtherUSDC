@@ -1,21 +1,21 @@
 package data
 
 type TransactionQ interface {
-    Get(txHash, string) (*Transaction, error)
-    Select(filters ...USDCTransactionFilter) ([]USDCTransaction, error)
-    Insert(tx USDCTransaction) (*USDCTransaction, error)
+    Get(txHash string) (*Transaction, error)
+    Select(filters ...TransactionFilter) ([]Transaction, error)
+    Insert(tx Transaction) (*Transaction, error)
 
-    FilterByFromAddress(addresses ...string) USDCTransactionQ
-    FilterByToAddress(addresses ...string) USDCTransactionQ
-    FilterByTimestamp(start, end int64) USDCTransactionQ
+    FilterByFromAddress(addresses ...string) TransactionQ
+    FilterByToAddress(addresses ...string) TransactionQ
+    FilterByTimestamp(start, end int64) TransactionQ
 }
 
 type Transaction struct {
-    txHash      string  `db: "txHash"`
-    fromAddress string  `db: "fromAddress"`
-    toAddress   string  `db: "toAddress"`
-    values      float64 `db: "value"`
-    timestamp   int64   `db: "timestamp"`
+    txHash      string  `db:"txHash" structs:"txHash"`
+    fromAddress string  `db:"fromAddress" structs:"fromAddress"`
+    toAddress   string  `db:"toAddress" structs:"toAddress"`
+    values      float64 `db:"value" structs:"value"`
+    timestamp   int64   `db:"timestamp" structs:"timestamp"`
 }
 
 type TransactionFilter func(TransactionQ) TransactionQ

@@ -3,14 +3,16 @@ package pg
 import (
     "database/sql"
     sq "github.com/Masterminds/squirrel"
+    "github.com/fatih/structs"
     "gitlab.com/distributed_lab/kit/pgdb"
+    "gitlab.com/distributed_lab/logan/v3/errors"
     "github.com/zepif/EtherUSDC/internal/data"
 )
 
-const uscTransactionsTable = "usdcTransactions"
+const usdcTransactionsTable = "usdcTransactions"
 
 func newTransactionQ(db *pgdb.DB) data.TransactionQ {
-    return &usdcTransactionQ{
+    return &TransactionQ{
         db:  db,
         sql: sq.StatementBuilder,
     }
@@ -23,7 +25,7 @@ type TransactionQ struct {
 
 func (q *TransactionQ) Get(txHash string) (*data.Transaction, error) {
     var tx data.Transaction
-    err := q.db.Get(&tx, q.sql.Select("*").From(usdcTransactionsTable).Where(sq.Eq{"tx_hash": txHash}))
+    err := q.db.Get(&tx, q.sql.Select("*").From(usdcTransactionsTable).Where(sq.Eq{"txHash": txHash}))
     if err == sql.ErrNoRows {
         return nil, nil
     }
@@ -37,7 +39,7 @@ func (q *TransactionQ) Select(filters ...data.TransactionFilter) ([]data.Transac
     var txs []data.Transaction
     stmt := q.sql.Select("*").From(usdcTransactionsTable)
     for _, filter := range filters {
-        stmt = filter(q).(*TransactionQ).sql
+        stmt = filter(q).(*TransactionQ).sql.Select()
     }
     err := q.db.Select(&txs, stmt)
     if err == sql.ErrNoRows {
@@ -50,17 +52,12 @@ func (q *TransactionQ) Select(filters ...data.TransactionFilter) ([]data.Transac
 }
 
 func (q *TransactionQ) Insert(tx data.Transaction) (*data.Transaction, error) {
-    stmt := q.sql.Insert(usdcTransactionsTable).SetMap(map[string]interface{}{
-        "tx_hash":     tx.TxHash,
-        "from_address": tx.FromAddress,
-        "to_address":   tx.ToAddress,
-        "value":        tx.Value,
-        "timestamp":    tx.Timestamp,
-    }).Suffix("RETURNING *")
+    clauses := structs.Map(tx)
+    stmt := q.sql.Insert(usdcTransactionsTable).SetMap(clauses).Suffix("RETURNING *")
     var result data.Transaction
     err := q.db.Get(&result, stmt)
     if err != nil {
-        return nil, err
+        return nil, errors.Wrap(err, "failed to insert nonce to db")
     }
     return &result, nil
 }

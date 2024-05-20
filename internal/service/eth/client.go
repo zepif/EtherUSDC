@@ -4,7 +4,7 @@ import (
     "context"
     "log"
     "math/big"
-    "string"
+    "strings"
 
     "github.com/ethereum/go-ethereum"
     "github.com/ethereum/go-ethereum/accounts/abi"
@@ -20,13 +20,13 @@ type EthClient struct {
     ContractAddress common.Address
 }
 
-func NewEthClient(rpcURL string, contractAddress string, contractAbiKSON string) (*EthClient, error) {
+func NewEthClient(rpcURL string, contractAddress string, contractAbiJSON string) (*EthClient, error) {
     client, err := ethclient.Dial(rpcURL)
     if err != nil {
         return nil, errors.Wrap(err, "failed to connect to Ethereum client")
     }
 
-    contactAbi, err := abi.JSON(strings.NewReader(contractAbiJSON))
+    contractAbi, err := abi.JSON(strings.NewReader(contractAbiJSON))
     if err != nil {
         return nil, errors.Wrap(err, "failed to parse contract ABI") 
     }
@@ -38,14 +38,14 @@ func NewEthClient(rpcURL string, contractAddress string, contractAbiKSON string)
 	}, nil
 }
 
-func (e *EthClient) ListenToEvents(ctx context.Context, logs chan<- types.Log) error {
+func (e *EthClient) ListenToEvents(ctx context.Context, logs chan types.Log) error {
 	query := ethereum.FilterQuery {
-        Address: []common.Address{e.ContractAddress},
+        Addresses: []common.Address{e.ContractAddress},
     }
 
     logsSub, err := e.Client.SubscribeFilterLogs(ctx, query, logs)
     if err != nil {
-        return error.Wrap(err, "failed to subscribe to contract events")
+        return errors.Wrap(err, "failed to subscribe to contract events")
     }
 
     go func() {
@@ -53,7 +53,7 @@ func (e *EthClient) ListenToEvents(ctx context.Context, logs chan<- types.Log) e
             select {
             case err := <-logsSub.Err():
                 log.Println("Error:", err)
-            case vLog := <-logsSub.Logs():
+            case vLog := <-logs:
                 logs <- vLog
             }
         }

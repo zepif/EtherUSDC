@@ -1,7 +1,7 @@
 package pg
 
 import (
-    "gitlab.com/distributed_lab/kit/pgdb"
+    pgdb "gitlab.com/distributed_lab/kit/pgdb"
     "github.com/zepif/EtherUSDC/internal/data"
 )
 

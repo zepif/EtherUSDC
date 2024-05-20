@@ -1,17 +1,20 @@
 package handlers
 
 import (
+    "database/sql"
     "net/http"
-
-	"github.com/go-chi/chi"
+    "time"
+    
+    "github.com/zepif/EtherUSDC/internal/data"
+    "github.com/go-chi/chi"
     "gitlab.com/distributed_lab/ape"
     "gitlab.com/distributed_lab/ape/problems"
-    "gitlab.com/distributed_lab/lorem"
+    "gitlab.com/distributed_lab/logan/v3"
     "gitlab.com/distributed_lab/logan/v3/errors"
 )
 
 type TransactionResponse struct {
-    TxHash     string   `json:"tx_hash"`
+    TxHash      string  `json:"tx_hash"`
     FromAddress string  `json:"from_address"`
     ToAddress   string  `json:"to_address"`
     Value       float64 `json:"value"`
@@ -23,68 +26,63 @@ func parseTimestampRange(input string) (int64, int64, error) {
         return 0, 0, nil
     }
 
-    times, err := lorem.ParseTimestampRange(input)
+    times, err := time.ParseInLocation("2006-01-02T15:04:05Z", input, time.UTC)
     if err != nil {
         return 0, 0, errors.Wrap(err, "failed to parse timestamp range")
     }
 
-    return times[0].Unix(), times[1].Unix(), nil
+    startTime := times.UnixNano() / int64(time.Millisecond)
+    endTime := startTime + int64(time.Hour/time.Millisecond)
+
+    return startTime, endTime, nil
 }
 
 func TransactionsByTime(w http.ResponseWriter, r *http.Request) {
     log := Log(r)
-    startTime, endTime, err := parseTimestampRange(r)
+
+    startTime, endTime, err := parseTimestampRange(r.URL.Query().Get("timestamp"))
     if err != nil {
         log.WithError(err).Error("failed to parse timestamp range")
-        ape.RenderErr(w, problems.BadRequest(err))
+        ape.RenderErr(w, problems.InternalError())
         return
     }
 
     d := DB(r)
-    TransactionQ := d.TransactionQ()
-    
-    log.WithFields(logan.F{
-        "start_time": startTime,
-        "end_time":   endTime,
-    }).Info("retrieving transactions by time range")
-
-    txs, err := TransactionQ().FilterByTimestamp(startTime, endTime).Select()
+    txs, err := d.TransactionQ().FilterByTimestamp(startTime, endTime).Select()
     if err != nil {
         log.WithError(err).Error("failed to get transactions by time range")
-        ape.RenderErr(w, problems.InternalError(err))
+        ape.RenderErr(w, problems.InternalError())
         return
     }
-    
+
     log.WithField("count", len(txs)).Info("transactions retrieved")
-    ape.Render(w, txs)   
+    ape.Render(w, txs)
 }
 
 func GetTransaction(w http.ResponseWriter, r *http.Request) {
     log := Log(r)
-
     txHash := chi.URLParam(r, "txHash")
 
-    d := DB(r)
-    TransactionQ := d.TransactionQ()
-    
-    tx, err := TransactionQ().Get(txHash)
+    db := DB(r)
+    tx, err := db.TransactionQ().Get(txHash)
     if err != nil {
         if err == sql.ErrNoRows {
             log.WithError(err).Error("transaction not found")
             ape.RenderErr(w, problems.NotFound())
             return
         }
+
         log.WithError(err).Error("failed to get transaction")
         ape.RenderErr(w, problems.InternalError())
         return
     }
-    
-    log.WithFields(logan.F{
-        "tx_hash":      tx.TxHash,
-        "from_address": tx.FromAddress,
-        "to_address":   tx.ToAddress,
-        "value":        tx.Value,
-        "timestamp":    tx.Timestamp,
+
+   log.WithFields(logan.F{
+        "tx_hash":      (*tx).txHash,
+        "from_address": (*tx).fromAddress,
+        "to_address":   (*tx).toAddress,
+        "value":        (*tx).values,
+        "timestamp":    (*tx).timestamp,
     }).Info("transaction retrieved")
 
     resp := TransactionResponse(*tx)
@@ -93,31 +91,29 @@ func GetTransaction(w http.ResponseWriter, r *http.Request) {
 
 func ListTransactions(w http.ResponseWriter, r *http.Request) {
     log := Log(r)
-
     d := DB(r)
-    TransactionQ := d.TransactionQ()
 
-    from := r.Context().Value("from").(string)
-    to := r.Context().Value("to").(string)
-
+    fromAddress := r.URL.Query().Get("fromAddress")
+    toAddress := r.URL.Query().Get("toAddress")
     var filters []data.TransactionFilter
-    if from != "" {
-        filters = append(filters, TransactionQ().FilterByFromAddress(from))
+    if fromAddress != "" {
+        d = d.TransactionQ().FilterByFromAddress(fromAddress)
     }
-    if to != "" {
-        filters = append(filters, TransactionQ().FilterByToAddress(to))
+
+    if toAddress != "" {
+        d = d.TransactionQ().FilterByToAddress(toAddress)
     }
 
     log.WithFields(logan.F{
-        "from":    from,
-        "to":      to,
+        "from":    fromAddress,
+        "to":      toAddress,
         "filters": len(filters),
     }).Info("retrieving transactions with filters")
 
-    txs, err := TransactionQ().Select(filters...)
+    txs, err := d.Select(filters...)
     if err != nil {
         log.WithError(err).Error("failed to get transactions with filters")
-        ape.RenderErr(w, problems.InternalError(err))
+        ape.RenderErr(w, problems.InternalError())
         return
     }
 

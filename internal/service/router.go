@@ -2,8 +2,8 @@ package service
 
 import (
 	"github.com/go-chi/chi"
-  	"github.com/zepif/Test-service/internal/config"
-	"github.com/zepif/Test-service/internal/data/pg"
+  	"github.com/zepif/EtherUSDC/internal/config"
+	"github.com/zepif/EtherUSDC/internal/data/pg"
 	"github.com/zepif/EtherUSDC/internal/service/handlers"
 	"gitlab.com/distributed_lab/ape"
 )

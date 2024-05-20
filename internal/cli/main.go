@@ -4,6 +4,7 @@ import (
 	"github.com/alecthomas/kingpin"
 	"github.com/zepif/EtherUSDC/internal/config"
 	"github.com/zepif/EtherUSDC/internal/service"
+    "github.com/zepif/EtherUSDC/internal/service/workers"
 	"gitlab.com/distributed_lab/kit/kv"
 	"gitlab.com/distributed_lab/logan/v3"
 )

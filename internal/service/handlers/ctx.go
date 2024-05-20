@@ -12,6 +12,7 @@ type ctxKey int
 
 const (
 	logCtxKey ctxKey = iota
+    dbCtxKey
 )
 
 func CtxLog(entry *logan.Entry) func(context.Context) context.Context {
