@@ -13,14 +13,6 @@ import (
     "gitlab.com/distributed_lab/logan/v3/errors"
 )
 
-type TransactionResponse struct {
-    TxHash      string  `json:"tx_hash"`
-    FromAddress string  `json:"from_address"`
-    ToAddress   string  `json:"to_address"`
-    Value       float64 `json:"value"`
-    Timestamp   int64   `json:"timestamp"`
-}
-
 func parseTimestampRange(input string) (int64, int64, error) {
     if input == "" {
         return 0, 0, nil
@@ -78,15 +70,14 @@ func GetTransaction(w http.ResponseWriter, r *http.Request) {
     }
 
    log.WithFields(logan.F{
-        "tx_hash":      (*tx).txHash,
-        "from_address": (*tx).fromAddress,
-        "to_address":   (*tx).toAddress,
-        "value":        (*tx).values,
-        "timestamp":    (*tx).timestamp,
+        "txHash":      (*tx).txHash,
+        "fromAddress": (*tx).fromAddress,
+        "toAddress":   (*tx).toAddress,
+        "value":       (*tx).values,
+        "timestamp":   (*tx).timestamp,
     }).Info("transaction retrieved")
 
-    resp := TransactionResponse(*tx)
-    ape.Render(w, resp)
+    ape.Render(w, *tx)
 }
 
 func ListTransactions(w http.ResponseWriter, r *http.Request) {
