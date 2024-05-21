@@ -16,7 +16,7 @@ func (s *service) router(cfg config.Config) chi.Router {
 		ape.LoganMiddleware(s.log),
 		ape.CtxMiddleware(
 			handlers.CtxLog(s.log),
-            handlers.CtxDB(pg.NewStorage(cfg.DB())),
+            handlers.CtxDB(pg.NewMasterQ(cfg.DB())),
 		),
 	)
 	r.Route("/integrations/EtherUSDC", func(r chi.Router) {

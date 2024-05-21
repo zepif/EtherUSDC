@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/zepif/EtherUSDC/internal/config"
+    "github.com/zepif/EtherUSDC/internal/data/pg"
 	"gitlab.com/distributed_lab/kit/copus/types"
 	"gitlab.com/distributed_lab/logan/v3"
 	"gitlab.com/distributed_lab/logan/v3/errors"
@@ -39,9 +40,10 @@ func newService(cfg config.Config) *service {
 
 func Run(cfg config.Config) {
     log := cfg.Log()
-    db := pg.NewStorage(cfg.DB())
-
-    ethClient, err := eth.NewEthClient(cfg.EthRPC(), cfg.EthContractAddress(), cfg.EthContractABI())
+    db := pg.NewMasterQ(cfg.DB())
+    
+    ethConfig := cfg.EthConfigGetter().EthConfig()
+    ethClient, err := eth.NewEthClient(ethConfig.EthConfiger(), ethConfig.EthContractAddress(), ethConfig.EthContractABI())
     if err != nil {
         log.WithError(err).Fatal("failed to create Ethereum client")
     }

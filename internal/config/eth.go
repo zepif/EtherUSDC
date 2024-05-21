@@ -1,8 +1,10 @@
 package config
 
 import (
+    "gitlab.com/distributed_lab/figure"
     "gitlab.com/distributed_lab/kit/comfig"
     "gitlab.com/distributed_lab/kit/kv"
+    "gitlab.com/distributed_lab/logan/v3/errors"
 )
 
 type EthConfiger interface {
@@ -30,9 +32,10 @@ func (c *ethConfig) EthConfig() *EthConfig {
     return c.once.Do(func() interface{} {
         config := &EthConfig{}
         raw := kv.MustGetStringMap(c.getter, "eth")
-        config.EthRPC = raw["ETH_RPC"]
-        config.EthContractAddress = raw["ETH_CONTRACT_ADDRESS"]
-        config.EthContractABI = raw["ETH_CONTRACT_ABI"]
-        return config
+		err := figure.Out(&config).From(raw).Please()
+		if err != nil {
+			panic(errors.Wrap(err, "failed to figure out"))
+		}
+        return &config
     }).(*EthConfig)
 }

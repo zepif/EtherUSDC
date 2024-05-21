@@ -13,7 +13,7 @@ type Config interface {
     pgdb.Databaser
     types.Copuser
     comfig.Listenerer
-    EthConfiger
+    EthConfigGetter() EthConfiger
 }
 
 type config struct {
@@ -22,16 +22,20 @@ type config struct {
     types.Copuser
     comfig.Listenerer
     getter kv.Getter
-    EthConfiger
+    ethConfiger   EthConfiger 
+}
+
+func (c *config) EthConfigGetter() EthConfiger {
+    return c.ethConfiger
 }
 
 func New(getter kv.Getter) Config {
     return &config{
-        getter:     getter,
-        Databaser:  pgdb.NewDatabaser(getter),
-        Copuser:    copus.NewCopuser(getter),
-        Listenerer: comfig.NewListenerer(getter),
-        Logger:     comfig.NewLogger(getter, comfig.LoggerOpts{}),
-        EthConfiger: NewEthConfiger(getter),
+        getter:      getter,
+        Databaser:   pgdb.NewDatabaser(getter),
+        Copuser:     copus.NewCopuser(getter),
+        Listenerer:  comfig.NewListenerer(getter),
+        Logger:      comfig.NewLogger(getter, comfig.LoggerOpts{}),
+        ethConfiger: NewEthConfiger(getter),
     }
 }
