@@ -11,6 +11,7 @@ import (
 	"gitlab.com/distributed_lab/logan/v3/errors"
     "github.com/zepif/EtherUSDC/internal/service/eth"
     "github.com/zepif/EtherUSDC/internal/service/workers"
+    //"github.com/zepif/EtherUSDC/internal/service/handlers"
 )
 
 type service struct {

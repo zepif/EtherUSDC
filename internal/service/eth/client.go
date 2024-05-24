@@ -2,10 +2,11 @@ package eth
 
 import (
     "context"
-    "log"
     "math/big"
     "strings"
-
+    "time"
+    
+    store "github.com/zepif/EtherUSDC/internal/store"
     "github.com/ethereum/go-ethereum"
     "github.com/ethereum/go-ethereum/accounts/abi"
     "github.com/ethereum/go-ethereum/common"
@@ -26,7 +27,7 @@ func NewEthClient(rpcURL string, contractAddress string, contractAbiJSON string)
         return nil, errors.Wrap(err, "failed to connect to Ethereum client")
     }
 
-    contractAbi, err := abi.JSON(strings.NewReader(contractAbiJSON))
+    contractAbi, err := abi.JSON(strings.NewReader(store.StoreMetaData.ABI))
     if err != nil {
         return nil, errors.Wrap(err, "failed to parse contract ABI") 
     }
@@ -43,23 +44,38 @@ func (e *EthClient) ListenToEvents(ctx context.Context, logs chan types.Log) err
         Addresses: []common.Address{e.ContractAddress},
     }
 
-    logsSub, err := e.Client.SubscribeFilterLogs(ctx, query, logs)
+    /*header, err := e.Client.HeaderByNumber(ctx, nil)
     if err != nil {
-        return errors.Wrap(err, "failed to subscribe to contract events")
+        return errors.Wrap(err, "failed to get latest block number")
     }
+    startBlock := header.Number.Uint64()*/
 
-    go func() {
-        for {
-            select {
-            case err := <-logsSub.Err():
-                log.Println("Error:", err)
-            case vLog := <-logs:
+    ticker := time.NewTicker(10 * time.Second)
+    defer ticker.Stop()
+
+    for {
+        select {
+        case <-ctx.Done():
+            return nil
+        case <-ticker.C:
+            /*header, err := e.Client.HeaderByNumber(ctx, nil)
+            if err != nil {
+                return errors.Wrap(err, "failed to get latest block number")
+            }
+            /endBlock := header.Number.Uint64()*/
+
+            newlogs, err := e.Client.FilterLogs(ctx, query)
+            if err != nil {
+                return errors.Wrap(err, "failed to filter logs")
+            }
+
+            for _, vLog := range newlogs {
                 logs <- vLog
             }
-        }
-    }()
 
-    return nil
+            //startBlock = endBlock + 1
+        }
+    }
 }
 
 func (e *EthClient) ParseTransferEvent(vLog types.Log) (*TransferEvent, error) {

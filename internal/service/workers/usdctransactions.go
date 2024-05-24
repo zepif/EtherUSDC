@@ -66,7 +66,7 @@ func (w *TransactionWorker) saveTransaction(vLog types.Log, event *eth.TransferE
         TxHash:      vLog.TxHash.Hex(),
         FromAddress: event.From.Hex(),
         ToAddress:   event.To.Hex(),
-        Values:       float64(event.Value.Int64()),
+        Values:      float64(event.Value.Int64()),
         Timestamp:   time.Now().Unix(),
     }
 
