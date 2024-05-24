@@ -4,6 +4,8 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
+permissions: write-all
+
 env:
   CI_JOB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
