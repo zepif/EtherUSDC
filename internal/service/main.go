@@ -44,7 +44,7 @@ func Run(cfg config.Config) {
 	db := pg.NewMasterQ(cfg.DB())
 
 	ethConfig := cfg.EthConfig()
-	ethClient, err := eth.NewEthClient(ethConfig.EthRPC, ethConfig.EthContractAddress, ethConfig.EthContractABI)
+	ethClient, err := eth.NewEthClient(cfg, ethConfig.EthRPC, ethConfig.EthContractAddress, ethConfig.EthContractABI)
 	if err != nil {
 		log.WithError(err).Fatal("failed to create Ethereum client")
 	}
