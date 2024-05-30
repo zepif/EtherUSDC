@@ -1,8 +1,0 @@
-=============== May 24, 2024 (EEST) ===============
-13:43:50.479317 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-13:43:50.486755 db@open opening
-13:43:50.488363 version@stat F·[] S·0B[] Sc·[]
-13:43:50.490456 db@janitor F·2 G·0
-13:43:50.490467 db@open done T·3.689153ms
-13:56:17.806381 db@close closing
-13:56:17.806450 db@close done T·70.59µs

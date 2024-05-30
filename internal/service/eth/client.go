@@ -1,81 +1,75 @@
 package eth
 
 import (
-    "context"
-    "math/big"
-    "strings"
-    "time"
-    
-    store "github.com/zepif/EtherUSDC/internal/store"
-    "github.com/ethereum/go-ethereum"
-    "github.com/ethereum/go-ethereum/accounts/abi"
-    "github.com/ethereum/go-ethereum/common"
-    "github.com/ethereum/go-ethereum/core/types"
-    "github.com/ethereum/go-ethereum/ethclient"
-    "gitlab.com/distributed_lab/logan/v3/errors"
+	"context"
+	"fmt"
+	"math/big"
+	"strings"
+
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	store "github.com/zepif/EtherUSDC/internal/store"
+	"gitlab.com/distributed_lab/logan/v3/errors"
 )
 
 type EthClient struct {
-    Client          *ethclient.Client
-    ContractAbi     abi.ABI
-    ContractAddress common.Address
+	Client          *ethclient.Client
+	ContractAbi     abi.ABI
+	ContractAddress common.Address
 }
 
-func NewEthClient(rpcURL string, contractAddress string, contractAbiJSON string) (*EthClient, error) {
-    client, err := ethclient.Dial(rpcURL)
-    if err != nil {
-        return nil, errors.Wrap(err, "failed to connect to Ethereum client")
-    }
+func NewEthClient(projectID string, contractAddress string, contractAbiJSON string) (*EthClient, error) {
+	rpcURL := fmt.Sprintf("https://mainnet.infura.io/v3/%s", projectID)
+	print(rpcURL)
+	client, err := ethclient.Dial(rpcURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to connect to Ethereum client")
+	}
 
-    contractAbi, err := abi.JSON(strings.NewReader(store.StoreMetaData.ABI))
-    if err != nil {
-        return nil, errors.Wrap(err, "failed to parse contract ABI") 
-    }
+	contractAbi, err := abi.JSON(strings.NewReader(store.StoreMetaData.ABI))
+	// fmt.Println(contractAbi)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse contract ABI")
+	}
 
-    return &EthClient{
+	return &EthClient{
 		Client:          client,
 		ContractAbi:     contractAbi,
 		ContractAddress: common.HexToAddress(contractAddress),
 	}, nil
 }
 
-func (e *EthClient) ListenToEvents(ctx context.Context, logs chan types.Log) error {
-	query := ethereum.FilterQuery {
-        Addresses: []common.Address{e.ContractAddress},
-    }
+func (e *EthClient) ListenToEvents(ctx context.Context, logs chan<- types.Log) error {
+	query := ethereum.FilterQuery{
+		Addresses: []common.Address{e.ContractAddress},
+	}
 
-    /*header, err := e.Client.HeaderByNumber(ctx, nil)
-    if err != nil {
-        return errors.Wrap(err, "failed to get latest block number")
-    }
-    startBlock := header.Number.Uint64()*/
+	latestBlock, err := e.Client.BlockNumber(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to get latest block number")
+	}
+	startBlock := latestBlock - 2
 
-    ticker := time.NewTicker(10 * time.Second)
-    defer ticker.Stop()
+	for startBlock <= latestBlock {
+		query.FromBlock = new(big.Int).SetUint64(startBlock)
+		query.ToBlock = new(big.Int).SetUint64(latestBlock)
 
-    for {
-        select {
-        case <-ctx.Done():
-            return nil
-        case <-ticker.C:
-            /*header, err := e.Client.HeaderByNumber(ctx, nil)
-            if err != nil {
-                return errors.Wrap(err, "failed to get latest block number")
-            }
-            /endBlock := header.Number.Uint64()*/
+		newlogs, err := e.Client.FilterLogs(ctx, query)
+		if err != nil {
+			return errors.Wrap(err, "failed to filter logs")
+		}
 
-            newlogs, err := e.Client.FilterLogs(ctx, query)
-            if err != nil {
-                return errors.Wrap(err, "failed to filter logs")
-            }
+		for _, vLog := range newlogs {
+			logs <- vLog
+		}
 
-            for _, vLog := range newlogs {
-                logs <- vLog
-            }
+		startBlock = latestBlock + 1
+	}
 
-            //startBlock = endBlock + 1
-        }
-    }
+	return nil
 }
 
 func (e *EthClient) ParseTransferEvent(vLog types.Log) (*TransferEvent, error) {
@@ -93,4 +87,3 @@ type TransferEvent struct {
 	To    common.Address
 	Value *big.Int
 }
-

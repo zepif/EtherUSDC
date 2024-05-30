@@ -5,13 +5,13 @@ import (
 	"net/http"
 
 	"github.com/zepif/EtherUSDC/internal/config"
-    "github.com/zepif/EtherUSDC/internal/data/pg"
+	"github.com/zepif/EtherUSDC/internal/data/pg"
+	"github.com/zepif/EtherUSDC/internal/service/eth"
+	"github.com/zepif/EtherUSDC/internal/service/workers"
 	"gitlab.com/distributed_lab/kit/copus/types"
 	"gitlab.com/distributed_lab/logan/v3"
 	"gitlab.com/distributed_lab/logan/v3/errors"
-    "github.com/zepif/EtherUSDC/internal/service/eth"
-    "github.com/zepif/EtherUSDC/internal/service/workers"
-    //"github.com/zepif/EtherUSDC/internal/service/handlers"
+	//"github.com/zepif/EtherUSDC/internal/service/handlers"
 )
 
 type service struct {
@@ -40,22 +40,21 @@ func newService(cfg config.Config) *service {
 }
 
 func Run(cfg config.Config) {
-    log := cfg.Log()
-    db := pg.NewMasterQ(cfg.DB())
-    
-    ethConfig := cfg.EthConfig()
-    ethClient, err := eth.NewEthClient(ethConfig.EthRPC, ethConfig.EthContractAddress, ethConfig.EthContractABI)
-    if err != nil {
-        log.WithError(err).Fatal("failed to create Ethereum client")
-    }
+	log := cfg.Log()
+	db := pg.NewMasterQ(cfg.DB())
 
-    transactionWorker := workers.NewTransactionWorker(log, db, ethClient)
-    err = transactionWorker.Start()
-    if err != nil {
-        log.WithError(err).Fatal("failed to start transaction worker")
-    }
-    defer transactionWorker.Stop()
+	ethConfig := cfg.EthConfig()
+	ethClient, err := eth.NewEthClient(ethConfig.EthRPC, ethConfig.EthContractAddress, ethConfig.EthContractABI)
+	if err != nil {
+		log.WithError(err).Fatal("failed to create Ethereum client")
+	}
 
+	transactionWorker := workers.NewTransactionWorker(log, db, ethClient)
+	err = transactionWorker.Start()
+	if err != nil {
+		log.WithError(err).Fatal("failed to start transaction worker")
+	}
+	defer transactionWorker.Stop()
 
 	if err := newService(cfg).run(cfg); err != nil {
 		panic(err)

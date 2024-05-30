@@ -1,10 +1,30 @@
 package data_test
 
 import (
+	"database/sql"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
 	"github.com/zepif/EtherUSDC/internal/data"
+	"github.com/zepif/EtherUSDC/internal/data/pg"
 )
+
+type MockDB struct {
+	SQL *sql.DB
+}
+
+func NewMockDB(db *sql.DB) *MockDB {
+	return &MockDB{SQL: db}
+}
+
+func (db *MockDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return db.SQL.Query(query, args...)
+}
+
+func (db *MockDB) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return db.SQL.Exec(query, args...)
+}
 
 func TestTransactionQ_Insert(t *testing.T) {
 	mockTx := data.Transaction{
@@ -19,15 +39,13 @@ func TestTransactionQ_Insert(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	mock.ExpectQuery(`INSERT INTO usdcTransactions`).
-		WithArgs(mockTx.TxHash, mockTx.FromAddress, mockTx.ToAddress, mockTx.Value, mockTx.Timestamp).
-		WillReturnRows(sqlmock.NewRows([]string{"txHash", "fromAddress", "toAddress", "value", "timestamp"}).
-			AddRow(mockTx.TxHash, mockTx.FromAddress, mockTx.ToAddress, mockTx.Value, mockTx.Timestamp))
+	mock.ExpectExec(`INSERT INTO usdcTransactions \(txHash, fromAddress, toAddress, value, timestamp\)`).
+		WithArgs(mockTx.TxHash, mockTx.FromAddress, mockTx.ToAddress, mockTx.Values, mockTx.Timestamp).
+		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	q := pg.NewMasterQ(pgdb.New(db)).TransactionQ()
-	result, err := q.Insert(mockTx)
+	q := pg.NewMasterQ(NewMockDB(db)).TransactionQ()
+	err = q.Insert(mockTx)
 	assert.NoError(t, err)
-	assert.Equal(t, &mockTx, result)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -48,9 +66,9 @@ func TestTransactionQ_Get(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM usdcTransactions WHERE txHash = \?`).
 		WithArgs(txHash).
 		WillReturnRows(sqlmock.NewRows([]string{"txHash", "fromAddress", "toAddress", "value", "timestamp"}).
-			AddRow(expectedTx.TxHash, expectedTx.FromAddress, expectedTx.ToAddress, expectedTx.Value, expectedTx.Timestamp))
+			AddRow(expectedTx.TxHash, expectedTx.FromAddress, expectedTx.ToAddress, expectedTx.Values, expectedTx.Timestamp))
 
-	q := pg.NewMasterQ(pgdb.New(db)).TransactionQ()
+	q := pg.NewMasterQ(NewMockDB(db)).TransactionQ()
 	result, err := q.Get(txHash)
 	assert.NoError(t, err)
 	assert.Equal(t, &expectedTx, result)
@@ -79,10 +97,10 @@ func TestTransactionQ_Select(t *testing.T) {
 
 	mock.ExpectQuery(`SELECT \* FROM usdcTransactions`).
 		WillReturnRows(sqlmock.NewRows([]string{"txHash", "fromAddress", "toAddress", "value", "timestamp"}).
-			AddRow(mockTx1.TxHash, mockTx1.FromAddress, mockTx1.ToAddress, mockTx1.Value, mockTx1.Timestamp).
-			AddRow(mockTx2.TxHash, mockTx2.FromAddress, mockTx2.ToAddress, mockTx2.Value, mockTx2.Timestamp))
+			AddRow(mockTx1.TxHash, mockTx1.FromAddress, mockTx1.ToAddress, mockTx1.Values, mockTx1.Timestamp).
+			AddRow(mockTx2.TxHash, mockTx2.FromAddress, mockTx2.ToAddress, mockTx2.Values, mockTx2.Timestamp))
 
-	q := pg.NewMasterQ(pgdb.New(db)).TransactionQ()
+	q := pg.NewMasterQ(NewMockDB(db)).TransactionQ()
 	results, err := q.Select()
 	assert.NoError(t, err)
 	assert.Equal(t, []data.Transaction{mockTx1, mockTx2}, results)
@@ -105,9 +123,9 @@ func TestTransactionQ_FilterByFromAddress(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM usdcTransactions WHERE fromAddress = \?`).
 		WithArgs(mockTx.FromAddress).
 		WillReturnRows(sqlmock.NewRows([]string{"txHash", "fromAddress", "toAddress", "value", "timestamp"}).
-			AddRow(mockTx.TxHash, mockTx.FromAddress, mockTx.ToAddress, mockTx.Value, mockTx.Timestamp))
+			AddRow(mockTx.TxHash, mockTx.FromAddress, mockTx.ToAddress, mockTx.Values, mockTx.Timestamp))
 
-	q := pg.NewMasterQ(pgdb.New(db)).TransactionQ().FilterByFromAddress(mockTx.FromAddress)
+	q := pg.NewMasterQ(NewMockDB(db)).TransactionQ().FilterByFromAddress(mockTx.FromAddress)
 	results, err := q.Select()
 	assert.NoError(t, err)
 	assert.Equal(t, []data.Transaction{mockTx}, results)
@@ -130,9 +148,9 @@ func TestTransactionQ_FilterByToAddress(t *testing.T) {
 	mock.ExpectQuery(`SELECT \* FROM usdcTransactions WHERE toAddress = \?`).
 		WithArgs(mockTx.ToAddress).
 		WillReturnRows(sqlmock.NewRows([]string{"txHash", "fromAddress", "toAddress", "value", "timestamp"}).
-			AddRow(mockTx.TxHash, mockTx.FromAddress, mockTx.ToAddress, mockTx.Value, mockTx.Timestamp))
+			AddRow(mockTx.TxHash, mockTx.FromAddress, mockTx.ToAddress, mockTx.Values, mockTx.Timestamp))
 
-	q := pg.NewMasterQ(pgdb.New(db)).TransactionQ().FilterByToAddress(mockTx.ToAddress)
+	q := pg.NewMasterQ(NewMockDB(db)).TransactionQ().FilterByToAddress(mockTx.ToAddress)
 	results, err := q.Select()
 	assert.NoError(t, err)
 	assert.Equal(t, []data.Transaction{mockTx}, results)
@@ -155,16 +173,15 @@ func TestTransactionQ_FilterByTimestamp(t *testing.T) {
 	startTimestamp := int64(1234567890)
 	endTimestamp := int64(1234567890)
 
-	mock.ExpectQuery(`SELECT \* FROM usdcTransactions WHERE timestamp >= \AND timestamp <= \?`).
+	mock.ExpectQuery(`SELECT \* FROM usdcTransactions WHERE timestamp >= \? AND timestamp <= \?`).
 		WithArgs(startTimestamp, endTimestamp).
 		WillReturnRows(sqlmock.NewRows([]string{"txHash", "fromAddress", "toAddress", "value", "timestamp"}).
-			AddRow(mockTx.TxHash, mockTx.FromAddress, mockTx.ToAddress, mockTx.Value, mockTx.Timestamp))
+			AddRow(mockTx.TxHash, mockTx.FromAddress, mockTx.ToAddress, mockTx.Values, mockTx.Timestamp))
 
-	q := pg.NewMasterQ(pgdb.New(db)).TransactionQ().FilterByTimestamp(startTimestamp, endTimestamp)
+	q := pg.NewMasterQ(NewMockDB(db)).TransactionQ().FilterByTimestamp(startTimestamp, endTimestamp)
 	results, err := q.Select()
 	assert.NoError(t, err)
 	assert.Equal(t, []data.Transaction{mockTx}, results)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
-
 

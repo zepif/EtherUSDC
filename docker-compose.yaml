@@ -30,7 +30,7 @@ services:
       - "8080:80"   # http
       - "8443:443"  # https
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx.conf:./nginx.conf
     depends_on:
       - service
 
