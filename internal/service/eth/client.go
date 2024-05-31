@@ -56,7 +56,7 @@ func (e *EthClient) ListenToEvents(ctx context.Context, logs chan<- types.Log) e
 		e.log.WithError(err).Error("Failed to get latest block number")
 		return errors.Wrap(err, "failed to get latest block number")
 	}
-	startBlock := latestBlock - 1000
+	startBlock := latestBlock - 425
 
 	e.log.WithFields(logan.F{
 		"startBlock":      startBlock,
@@ -106,7 +106,7 @@ func (e *EthClient) ParseTransferEvent(vLog types.Log) (*TransferEvent, error) {
 }
 
 type TransferEvent struct {
-	From  common.Address
-	To    common.Address
-	Value *big.Int
+	From   common.Address
+	To     common.Address
+	Amount *big.Int
 }

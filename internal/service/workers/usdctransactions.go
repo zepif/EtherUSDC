@@ -81,10 +81,10 @@ func (w *TransactionWorker) consumeLogs(logs <-chan types.Log) {
 			w.log.WithFields(logan.F{
 				"from":  event.From.Hex(),
 				"to":    event.To.Hex(),
-				"value": event.Value.Int64(),
+				"value": event.Amount.Int64(),
 			}).Info("Saving USDC transaction")
 
-			err = w.saveTransaction(vLog, event)
+			err = w.saveTransaction(vLog, *event)
 			if err != nil {
 				w.log.WithError(err).Error("failed to save USDC transaction")
 			}
@@ -92,15 +92,22 @@ func (w *TransactionWorker) consumeLogs(logs <-chan types.Log) {
 	}
 }
 
-func (w *TransactionWorker) saveTransaction(vLog types.Log, event *eth.TransferEvent) error {
+func (w *TransactionWorker) saveTransaction(vLog types.Log, event eth.TransferEvent) error {
 	w.log.Info("Saving USDC transaction")
 
 	tx := data.Transaction{
 		TxHash:      vLog.TxHash.Hex(),
 		FromAddress: event.From.Hex(),
 		ToAddress:   event.To.Hex(),
-		Values:      float64(event.Value.Int64()),
+		Values:      float64(event.Amount.Int64()),
 		Timestamp:   time.Now().Unix(),
+	}
+
+	existingTx := w.db.TransactionQ().FilterByTxHash(tx.TxHash)
+
+	if existingTx != nil {
+		w.log.WithField("txHash", tx.TxHash).Debug("Transaction already exists, skipping")
+		return nil
 	}
 
 	_, err := w.db.TransactionQ().Insert(tx)

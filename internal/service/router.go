@@ -20,7 +20,7 @@ func (s *service) router(cfg config.Config) chi.Router {
 		),
 	)
 	r.Route("/integrations/EtherUSDC", func(r chi.Router) {
-		r.Get("/transactions/time", handlers.TransactionsByTime)
+		r.Get("/transactions/time/{startTime}/{endTime}", handlers.TransactionsByTime)
 		r.Get("/transactions/{txHash}", handlers.GetTransaction)
 		r.Get("/transactions", handlers.ListTransactions)
 	})

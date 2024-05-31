@@ -80,3 +80,8 @@ func (q *TransactionQ) FilterByTimestamp(start, end int64) data.TransactionQ {
 	})
 	return q
 }
+
+func (q *TransactionQ) FilterByTxHash(txHash string) data.TransactionQ {
+	q.sql = q.sql.Where(sq.Eq{"txHash": txHash})
+	return q
+}
