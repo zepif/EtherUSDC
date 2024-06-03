@@ -24,16 +24,16 @@ type TransactionQ struct {
 	sql sq.StatementBuilderType
 }
 
-func (q *TransactionQ) Get(txHash string) (*data.Transaction, error) {
-	var tx data.Transaction
-	err := q.db.Get(&tx, q.sql.Select("*").From(usdcTransactionsTable).Where(sq.Eq{"txHash": txHash}))
+func (q *TransactionQ) Get(txHash string) ([]data.Transaction, error) {
+	var txs []data.Transaction
+	err := q.db.Select(&txs, q.sql.Select("*").From(usdcTransactionsTable).Where(sq.Eq{"txHash": txHash}))
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &tx, nil
+	return txs, nil
 }
 
 func (q *TransactionQ) Select(filters ...data.TransactionFilter) ([]data.Transaction, error) {
@@ -54,11 +54,12 @@ func (q *TransactionQ) Select(filters ...data.TransactionFilter) ([]data.Transac
 
 func (q *TransactionQ) Insert(tx data.Transaction) (*data.Transaction, error) {
 	clauses := structs.Map(tx)
+	delete(clauses, "id")
 	stmt := q.sql.Insert(usdcTransactionsTable).SetMap(clauses).Suffix("RETURNING *")
 	var result data.Transaction
 	err := q.db.Get(&result, stmt)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to insert nonce to db")
+		return nil, errors.Wrap(err, "failed to insert transaction to db")
 	}
 	return &result, nil
 }

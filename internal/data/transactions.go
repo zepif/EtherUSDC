@@ -1,7 +1,7 @@
 package data
 
 type TransactionQ interface {
-	Get(txHash string) (*Transaction, error)
+	Get(txHash string) ([]Transaction, error)
 	Select(filters ...TransactionFilter) ([]Transaction, error)
 	Insert(tx Transaction) (*Transaction, error)
 
@@ -12,6 +12,7 @@ type TransactionQ interface {
 }
 
 type Transaction struct {
+	ID          int64   `db:"id" structs:"id"`
 	TxHash      string  `db:"txhash" structs:"txhash"`
 	FromAddress string  `db:"fromaddress" structs:"fromaddress"`
 	ToAddress   string  `db:"toaddress" structs:"toaddress"`

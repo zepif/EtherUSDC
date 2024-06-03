@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -47,28 +46,30 @@ func GetTransaction(w http.ResponseWriter, r *http.Request) {
 	txHash := chi.URLParam(r, "txHash")
 
 	db := DB(r)
-	tx, err := db.TransactionQ().Get(txHash)
+	txs, err := db.TransactionQ().Get(txHash)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			log.WithError(err).Error("transaction not found")
-			ape.RenderErr(w, problems.NotFound())
-			return
-		}
-
-		log.WithError(err).Error("failed to get transaction")
+		log.WithError(err).Error("failed to get transactions")
 		ape.RenderErr(w, problems.InternalError())
 		return
 	}
 
-	log.WithFields(logan.F{
-		"txHash":      (*tx).TxHash,
-		"fromAddress": (*tx).FromAddress,
-		"toAddress":   (*tx).ToAddress,
-		"value":       (*tx).Values,
-		"timestamp":   (*tx).Timestamp,
-	}).Info("transaction retrieved")
+	if len(txs) == 0 {
+		log.WithField("txHash", txHash).Error("transactions not found")
+		ape.RenderErr(w, problems.NotFound())
+		return
+	}
 
-	ape.Render(w, *tx)
+	for _, tx := range txs {
+		log.WithFields(logan.F{
+			"txHash":      tx.TxHash,
+			"fromAddress": tx.FromAddress,
+			"toAddress":   tx.ToAddress,
+			"value":       tx.Values,
+			"timestamp":   tx.Timestamp,
+		}).Info("transaction retrieved")
+	}
+
+	ape.Render(w, txs)
 }
 
 func ListTransactions(w http.ResponseWriter, r *http.Request) {

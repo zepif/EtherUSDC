@@ -42,7 +42,7 @@ func (w *TransactionWorker) Start() error {
 		w.log.WithError(err).Error("Failed to get latest block number")
 		return err
 	}
-	startBlock := latestBlock - 500
+	startBlock := latestBlock - 1000
 
 	err = w.client.LoadRecentBlocks(w.ctx, logs, startBlock, latestBlock)
 	if err != nil {
@@ -130,14 +130,21 @@ func (w *TransactionWorker) saveTransaction(vLog types.Log, event eth.TransferEv
 		Timestamp:   time.Now().Unix(),
 	}
 
-	existingTx := w.db.TransactionQ().FilterByTxHash(tx.TxHash)
-
-	if existingTx != nil {
-		w.log.WithField("txHash", tx.TxHash).Debug("Transaction already exists, skipping")
-		return nil
+	existingTxs, err := w.db.TransactionQ().Get(tx.TxHash)
+	if err != nil {
+		w.log.WithError(err).Error("failed to check for existing transactions")
+		return errors.Wrap(err, "failed to check for existing transactions")
 	}
 
-	_, err := w.db.TransactionQ().Insert(tx)
+	for _, existingTx := range existingTxs {
+		if existingTx.FromAddress == tx.FromAddress && existingTx.ToAddress == tx.ToAddress &&
+			existingTx.Values == tx.Values && existingTx.Timestamp == tx.Timestamp {
+			w.log.WithField("txHash", tx.TxHash).Warn("transaction event already exists")
+			return nil
+		}
+	}
+
+	_, err = w.db.TransactionQ().Insert(tx)
 	if err != nil {
 		w.log.WithError(err).WithFields(logan.F{
 			"txHash":      tx.TxHash,
