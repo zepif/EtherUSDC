@@ -36,14 +36,41 @@ func NewTransactionWorker(log *logan.Entry, db data.MasterQ, client *eth.EthClie
 func (w *TransactionWorker) Start() error {
 	logs := make(chan types.Log, 100)
 	go w.consumeLogs(logs)
-	err := w.client.ListenToEvents(w.ctx, logs)
-	// w.consumeLogs(logs)
+
+	latestBlock, err := w.client.Client.BlockNumber(w.ctx)
 	if err != nil {
-		w.log.WithError(err).Error("ListenToEvents failed")
+		w.log.WithError(err).Error("Failed to get latest block number")
+		return err
+	}
+	startBlock := latestBlock - 500
+
+	err = w.client.LoadRecentBlocks(w.ctx, logs, startBlock, latestBlock)
+	if err != nil {
+		w.log.WithError(err).Error("LoadRecentBlocks failed")
 		return err
 	}
 
-	w.log.Info("ListenToEvents started successfully")
+	go func() {
+		for {
+			select {
+			case <-w.ctx.Done():
+				return
+			case <-time.After(time.Second):
+				latestBlock, err := w.client.Client.BlockNumber(w.ctx)
+				if err != nil {
+					w.log.WithError(err).Error("Failed to get latest block number")
+					continue
+				}
+				err = w.client.LoadRecentBlocks(w.ctx, logs, startBlock, latestBlock)
+				if err != nil {
+					w.log.WithError(err).Error("LoadRecentBlocks failed")
+				}
+				startBlock = latestBlock + 1
+			}
+		}
+	}()
+
+	w.log.Info("LoadRecentBlocks started successfully")
 	return nil
 }
 

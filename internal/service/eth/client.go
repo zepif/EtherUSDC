@@ -46,50 +46,30 @@ func NewEthClient(cfg config.Config, projectID string, contractAddress string, c
 	}, nil
 }
 
-func (e *EthClient) ListenToEvents(ctx context.Context, logs chan<- types.Log) error {
+func (e *EthClient) LoadRecentBlocks(ctx context.Context, logs chan<- types.Log, startBlock uint64, endBlock uint64) error {
 	query := ethereum.FilterQuery{
 		Addresses: []common.Address{e.ContractAddress},
+		FromBlock: new(big.Int).SetUint64(startBlock),
+		ToBlock:   new(big.Int).SetUint64(endBlock),
 	}
 
-	latestBlock, err := e.Client.BlockNumber(ctx)
+	newlogs, err := e.Client.FilterLogs(ctx, query)
 	if err != nil {
-		e.log.WithError(err).Error("Failed to get latest block number")
-		return errors.Wrap(err, "failed to get latest block number")
+		return errors.Wrap(err, "failed to filter logs")
 	}
-	startBlock := latestBlock - 425
 
 	e.log.WithFields(logan.F{
-		"startBlock":      startBlock,
-		"latestBlock":     latestBlock,
-		"contractAddress": e.ContractAddress.Hex(),
-	}).Info("Starting log filtering")
+		"fromBlock": query.FromBlock.Uint64(),
+		"toBlock":   query.ToBlock.Uint64(),
+		"logCount":  len(newlogs),
+	}).Info("Received logs from Ethereum")
 
-	for startBlock <= latestBlock {
-		query.FromBlock = new(big.Int).SetUint64(startBlock)
-		query.ToBlock = new(big.Int).SetUint64(latestBlock)
+	if len(newlogs) == 0 {
+		e.log.Warn("No logs found for the given block range")
+	}
 
-		newlogs, err := e.Client.FilterLogs(ctx, query)
-		if err != nil {
-			return errors.Wrap(err, "failed to filter logs")
-		}
-
-		// fmt.Println(query.FromBlock.Uint64())
-
-		e.log.WithFields(logan.F{
-			"fromBlock": query.FromBlock.Uint64(),
-			"toBlock":   query.ToBlock.Uint64(),
-			"logCount":  len(newlogs),
-		}).Info("Received logs from Ethereum")
-
-		if len(newlogs) == 0 {
-			e.log.Warn("No logs found for the given block range")
-		}
-
-		for _, vLog := range newlogs {
-			logs <- vLog
-		}
-
-		startBlock = latestBlock + 1
+	for _, vLog := range newlogs {
+		logs <- vLog
 	}
 
 	return nil
