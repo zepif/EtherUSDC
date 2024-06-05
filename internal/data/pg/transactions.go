@@ -20,8 +20,9 @@ func newTransactionQ(db *pgdb.DB) data.TransactionQ {
 }
 
 type TransactionQ struct {
-	db  *pgdb.DB
-	sql sq.StatementBuilderType
+	db      *pgdb.DB
+	sql     sq.StatementBuilderType
+	builder sq.SelectBuilder
 }
 
 func (q *TransactionQ) Get(txHash string) ([]data.Transaction, error) {
@@ -65,12 +66,12 @@ func (q *TransactionQ) Insert(tx data.Transaction) (*data.Transaction, error) {
 }
 
 func (q *TransactionQ) FilterByFromAddress(addresses ...string) data.TransactionQ {
-	q.sql = q.sql.Where(sq.Eq{"fromAddress": addresses})
+	q.sql = q.sql.Where(sq.Eq{"from_address": addresses})
 	return q
 }
 
 func (q *TransactionQ) FilterByToAddress(addresses ...string) data.TransactionQ {
-	q.sql = q.sql.Where(sq.Eq{"toAddress": addresses})
+	q.sql = q.sql.Where(sq.Eq{"to_address": addresses})
 	return q
 }
 
@@ -83,11 +84,16 @@ func (q *TransactionQ) FilterByTimestamp(start, end int64) data.TransactionQ {
 }
 
 func (q *TransactionQ) FilterByTxHash(txHash string) data.TransactionQ {
-	q.sql = q.sql.Where(sq.Eq{"txHash": txHash})
+	q.sql = q.sql.Where(sq.Eq{"tx_hash": txHash})
 	return q
 }
 
 func (q *TransactionQ) FilterByBlockNumber(blockNumber int64) data.TransactionQ {
 	q.sql = q.sql.Where(sq.GtOrEq{"block_number": blockNumber})
+	return q
+}
+
+func (q *TransactionQ) Page(limit, offset int) data.TransactionQ {
+	q.builder = q.builder.Limit(uint64(limit)).Offset(uint64(offset))
 	return q
 }

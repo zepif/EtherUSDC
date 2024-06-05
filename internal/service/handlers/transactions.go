@@ -16,6 +16,8 @@ type TransactionsListRequest struct {
 	TxHash      *string `url:"txHash"`
 	StartTime   *int64  `url:"startTime"`
 	EndTime     *int64  `url:"endTime"`
+	Offset      *int    `url:"offset, deifault=1"`
+	Limit       *int    `url:"limit, default=10"`
 }
 
 func ListTransactions(w http.ResponseWriter, r *http.Request) {
@@ -44,6 +46,9 @@ func ListTransactions(w http.ResponseWriter, r *http.Request) {
 	if request.StartTime != nil && request.EndTime != nil {
 		d = d.FilterByTimestamp(*request.StartTime, *request.EndTime)
 	}
+	if request.Limit != nil && request.Offset != nil {
+		d = d.Page(*request.Limit, *request.Offset)
+	}
 
 	log.WithFields(logan.F{
 		"from":        request.FromAddress,
@@ -52,6 +57,8 @@ func ListTransactions(w http.ResponseWriter, r *http.Request) {
 		"txHash":      request.TxHash,
 		"startTime":   request.StartTime,
 		"endTime":     request.EndTime,
+		"limit":       request.Limit,
+		"offset":      request.Offset,
 	}).Info("retrieving transactions with filters")
 
 	txs, err := d.Select()
@@ -62,5 +69,9 @@ func ListTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.WithField("count", len(txs)).Info("transactions retrieved")
-	ape.Render(w, txs)
+	ape.Render(w, map[string]interface{}{
+		"transactions": txs,
+		"limit":        request.Limit,
+		"offset":       request.Offset,
+	})
 }

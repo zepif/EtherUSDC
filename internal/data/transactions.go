@@ -11,8 +11,7 @@ type TransactionQ interface {
 	FilterByTxHash(txHash string) TransactionQ
 	FilterByBlockNumber(blockNumber int64) TransactionQ
 
-	// Page(pageParams pgdb.OffsetPageParams) TransactionQ
-	// GetTotalCount() (int64, error)
+	Page(limit, offset int) TransactionQ
 }
 
 type Transaction struct {
