@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/zepif/EtherUSDC/internal/data"
 	"gitlab.com/distributed_lab/logan/v3"
 )
 
@@ -30,8 +29,8 @@ func WsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	log := r.Context().Value(ctxLog{}).(*logan.Entry)
-	db := r.Context().Value(ctxDB{}).(data.TransactionQ)
+	log := Log(r)
+	db := DB(r).TransactionQ()
 
 	for {
 		_, _, err := conn.ReadMessage()
