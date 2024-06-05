@@ -49,7 +49,7 @@ func Run(cfg config.Config) {
 		log.WithError(err).Fatal("failed to create Ethereum client")
 	}
 
-	transactionWorker := workers.NewTransactionWorker(log, db, ethClient)
+	transactionWorker := workers.NewTransactionWorker(log, db, ethClient, cfg.EthConfig().EthBlock)
 	err = transactionWorker.Start()
 	if err != nil {
 		log.WithError(err).Fatal("failed to start transaction worker")

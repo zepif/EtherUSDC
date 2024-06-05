@@ -14,22 +14,24 @@ import (
 )
 
 type TransactionWorker struct {
-	log    *logan.Entry
-	db     data.MasterQ
-	client *eth.EthClient
-	ctx    context.Context
-	cancel context.CancelFunc
+	log        *logan.Entry
+	db         data.MasterQ
+	client     *eth.EthClient
+	ctx        context.Context
+	cancel     context.CancelFunc
+	startBlock uint64
 }
 
-func NewTransactionWorker(log *logan.Entry, db data.MasterQ, client *eth.EthClient) *TransactionWorker {
+func NewTransactionWorker(log *logan.Entry, db data.MasterQ, client *eth.EthClient, startBlock uint64) *TransactionWorker {
 	ctx, cancel := context.WithCancel(context.Background())
 	log.WithField("context", fmt.Sprintf("%p", ctx)).Info("Created new context")
 	return &TransactionWorker{
-		log:    log.WithField("worker", "usdctransactions"),
-		db:     db,
-		client: client,
-		ctx:    ctx,
-		cancel: cancel,
+		log:        log.WithField("worker", "usdctransactions"),
+		db:         db,
+		client:     client,
+		ctx:        ctx,
+		cancel:     cancel,
+		startBlock: startBlock,
 	}
 }
 
@@ -42,7 +44,7 @@ func (w *TransactionWorker) Start() error {
 		w.log.WithError(err).Error("Failed to get latest block number")
 		return err
 	}
-	startBlock := latestBlock - 5000
+	startBlock := w.startBlock
 
 	err = w.client.LoadRecentBlocks(w.ctx, logs, startBlock, latestBlock)
 	if err != nil {
