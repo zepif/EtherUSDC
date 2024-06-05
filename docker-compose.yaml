@@ -12,14 +12,14 @@ services:
       - db-data:/var/lib/postgresql/data
 
   service:
-    image: registry.https://github.com/zepif/Test-service
+    image: registry.https://github.com/zepif/EtherUSDC
     environment:
       KV_VIPER_FILE: ./config.yaml
-      DATABASE_URL: postgres://tokend:changeme@db/tokend?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DATABASE}?sslmode=disable
     depends_on:
       - db
     volumes:
-      - ./config.yaml:/app/config.yaml
+      - ./config.yaml:./config.yaml
 
   nginx:
     image: nginx:latest
@@ -27,7 +27,7 @@ services:
       - .env
     restart: unless-stopped
     ports:
-      - "8080:80"   # http
+      - "8000:80"   # http
       - "8443:443"  # https
     volumes:
       - ./nginx.conf:./nginx.conf

@@ -6,12 +6,6 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"gitlab.com/distributed_lab/logan/v3"
-)
-
-type (
-	ctxLog struct{}
-	ctxDB  struct{}
 )
 
 var upgrader = websocket.Upgrader{
@@ -23,7 +17,7 @@ var upgrader = websocket.Upgrader{
 func WsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log := r.Context().Value(ctxLog{}).(logan.Entry)
+		log := Log(r)
 		log.WithError(err).Error("failed to upgrade connection to WebSocket")
 		return
 	}
