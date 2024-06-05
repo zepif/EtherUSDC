@@ -42,7 +42,7 @@ func (w *TransactionWorker) Start() error {
 		w.log.WithError(err).Error("Failed to get latest block number")
 		return err
 	}
-	startBlock := latestBlock - 1000
+	startBlock := latestBlock - 5000
 
 	err = w.client.LoadRecentBlocks(w.ctx, logs, startBlock, latestBlock)
 	if err != nil {
@@ -128,6 +128,7 @@ func (w *TransactionWorker) saveTransaction(vLog types.Log, event eth.TransferEv
 		ToAddress:   event.To.Hex(),
 		Values:      float64(event.Amount.Int64()),
 		Timestamp:   time.Now().Unix(),
+		BlockNumber: int64(vLog.BlockNumber),
 	}
 
 	existingTxs, err := w.db.TransactionQ().Get(tx.TxHash)
@@ -138,7 +139,7 @@ func (w *TransactionWorker) saveTransaction(vLog types.Log, event eth.TransferEv
 
 	for _, existingTx := range existingTxs {
 		if existingTx.FromAddress == tx.FromAddress && existingTx.ToAddress == tx.ToAddress &&
-			existingTx.Values == tx.Values && existingTx.Timestamp == tx.Timestamp {
+			existingTx.Values == tx.Values && existingTx.Timestamp == tx.Timestamp && existingTx.BlockNumber == tx.BlockNumber {
 			w.log.WithField("txHash", tx.TxHash).Warn("transaction event already exists")
 			return nil
 		}
@@ -152,6 +153,7 @@ func (w *TransactionWorker) saveTransaction(vLog types.Log, event eth.TransferEv
 			"toAddress":   tx.ToAddress,
 			"value":       tx.Values,
 			"timestamp":   tx.Timestamp,
+			"blockNumber": tx.BlockNumber,
 		}).Error("failed to save USDC transaction")
 
 		return errors.Wrap(err, "failed to insert transaction into database")

@@ -26,7 +26,7 @@ type TransactionQ struct {
 
 func (q *TransactionQ) Get(txHash string) ([]data.Transaction, error) {
 	var txs []data.Transaction
-	err := q.db.Select(&txs, q.sql.Select("*").From(usdcTransactionsTable).Where(sq.Eq{"txHash": txHash}))
+	err := q.db.Select(&txs, q.sql.Select("*").From(usdcTransactionsTable).Where(sq.Eq{"tx_hash": txHash}))
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -84,5 +84,10 @@ func (q *TransactionQ) FilterByTimestamp(start, end int64) data.TransactionQ {
 
 func (q *TransactionQ) FilterByTxHash(txHash string) data.TransactionQ {
 	q.sql = q.sql.Where(sq.Eq{"txHash": txHash})
+	return q
+}
+
+func (q *TransactionQ) FilterByBlockNumber(blockNumber int64) data.TransactionQ {
+	q.sql = q.sql.Where(sq.GtOrEq{"block_number": blockNumber})
 	return q
 }

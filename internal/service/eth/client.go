@@ -24,9 +24,9 @@ type EthClient struct {
 	log             *logan.Entry
 }
 
-func NewEthClient(cfg config.Config, projectID string, contractAddress string, contractAbiJSON string) (*EthClient, error) {
-	rpcURL := fmt.Sprintf("https://mainnet.infura.io/v3/%s", projectID)
-	fmt.Println(rpcURL)
+func NewEthClient(cfg config.Config) (*EthClient, error) {
+	rpcURL := fmt.Sprintf("https://mainnet.infura.io/v3/%s", cfg.EthConfig().EthRPC)
+	// fmt.Println(rpcURL)
 	client, err := ethclient.Dial(rpcURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to connect to Ethereum client")
@@ -41,7 +41,7 @@ func NewEthClient(cfg config.Config, projectID string, contractAddress string, c
 	return &EthClient{
 		Client:          client,
 		ContractAbi:     contractAbi,
-		ContractAddress: common.HexToAddress(contractAddress),
+		ContractAddress: common.HexToAddress(cfg.EthConfig().EthContractAddress),
 		log:             cfg.Log().WithField("component", "eth_client"),
 	}, nil
 }
