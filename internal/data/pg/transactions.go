@@ -15,19 +15,19 @@ const usdcTransactionsTable = "usdcTransactions"
 func newTransactionQ(db *pgdb.DB) data.TransactionQ {
 	return &TransactionQ{
 		db:  db,
-		sql: sq.StatementBuilder,
+		sql: sq.StatementBuilder.Select("*").From(usdcTransactionsTable),
 	}
 }
 
 type TransactionQ struct {
-	db      *pgdb.DB
-	sql     sq.StatementBuilderType
-	builder sq.SelectBuilder
+	db  *pgdb.DB
+	sql sq.SelectBuilder
 }
 
 func (q *TransactionQ) Get(txHash string) ([]data.Transaction, error) {
 	var txs []data.Transaction
-	err := q.db.Select(&txs, q.sql.Select("*").From(usdcTransactionsTable).Where(sq.Eq{"tx_hash": txHash}))
+	query := q.sql.Where(sq.Eq{"tx_hash": txHash})
+	err := q.db.Select(&txs, query)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -39,9 +39,9 @@ func (q *TransactionQ) Get(txHash string) ([]data.Transaction, error) {
 
 func (q *TransactionQ) Select(filters ...data.TransactionFilter) ([]data.Transaction, error) {
 	var txs []data.Transaction
-	stmt := q.sql.Select("*").From(usdcTransactionsTable)
+	stmt := q.sql
 	for _, filter := range filters {
-		stmt = filter(q).(*TransactionQ).sql.Select()
+		stmt = filter(q).(*TransactionQ).sql
 	}
 	err := q.db.Select(&txs, stmt)
 	if err == sql.ErrNoRows {
@@ -56,7 +56,7 @@ func (q *TransactionQ) Select(filters ...data.TransactionFilter) ([]data.Transac
 func (q *TransactionQ) Insert(tx data.Transaction) (*data.Transaction, error) {
 	clauses := structs.Map(tx)
 	delete(clauses, "id")
-	stmt := q.sql.Insert(usdcTransactionsTable).SetMap(clauses).Suffix("RETURNING *")
+	stmt := sq.Insert(usdcTransactionsTable).SetMap(clauses).Suffix("RETURNING *")
 	var result data.Transaction
 	err := q.db.Get(&result, stmt)
 	if err != nil {
@@ -94,6 +94,6 @@ func (q *TransactionQ) FilterByBlockNumber(blockNumber int64) data.TransactionQ 
 }
 
 func (q *TransactionQ) Page(limit, offset int) data.TransactionQ {
-	q.builder = q.builder.Limit(uint64(limit)).Offset(uint64(offset))
+	q.sql = q.sql.Limit(uint64(limit)).Offset(uint64(offset))
 	return q
 }

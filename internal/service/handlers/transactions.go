@@ -16,8 +16,8 @@ type TransactionsListRequest struct {
 	TxHash      *string `url:"txHash"`
 	StartTime   *int64  `url:"startTime"`
 	EndTime     *int64  `url:"endTime"`
-	Offset      *int    `url:"offset, deifault=1"`
-	Limit       *int    `url:"limit, default=10"`
+	Offset      *int    `url:"offset"`
+	Limit       *int    `url:"limit"`
 }
 
 func ListTransactions(w http.ResponseWriter, r *http.Request) {
@@ -29,6 +29,15 @@ func ListTransactions(w http.ResponseWriter, r *http.Request) {
 		log.WithError(err).Error("failed to decode request parameters")
 		ape.RenderErr(w, problems.InternalError())
 		return
+	}
+
+	if request.Offset == nil {
+		defaultOffset := 1
+		request.Offset = &defaultOffset
+	}
+	if request.Limit == nil {
+		defaultLimit := 10
+		request.Limit = &defaultLimit
 	}
 
 	if request.FromAddress != nil {
@@ -46,9 +55,7 @@ func ListTransactions(w http.ResponseWriter, r *http.Request) {
 	if request.StartTime != nil && request.EndTime != nil {
 		d = d.FilterByTimestamp(*request.StartTime, *request.EndTime)
 	}
-	if request.Limit != nil && request.Offset != nil {
-		d = d.Page(*request.Limit, *request.Offset)
-	}
+	d = d.Page(*request.Limit, *request.Offset)
 
 	log.WithFields(logan.F{
 		"from":        request.FromAddress,
