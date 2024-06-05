@@ -21,7 +21,7 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
-func wsHandler(w http.ResponseWriter, r *http.Request) {
+func WsHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log := r.Context().Value(ctxLog{}).(logan.Entry)
@@ -30,7 +30,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	log := r.Context().Value(ctxLog{}).(logan.Entry)
+	log := r.Context().Value(ctxLog{}).(*logan.Entry)
 	db := r.Context().Value(ctxDB{}).(data.TransactionQ)
 
 	for {
