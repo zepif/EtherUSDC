@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/zepif/EtherUSDC/internal/data"
 	"github.com/zepif/EtherUSDC/internal/service/eth"
+	store "github.com/zepif/EtherUSDC/internal/store"
 	"gitlab.com/distributed_lab/logan/v3"
 )
 
@@ -46,7 +47,7 @@ func (w *TransactionWorker) Start() error {
 	}
 	startBlock := w.startBlock
 
-	err = w.client.LoadRecentBlocks(w.ctx, logs, startBlock, latestBlock)
+	err = w.client.LoadBlocks(w.ctx, logs, startBlock, latestBlock)
 	if err != nil {
 		w.log.WithError(err).Error("LoadRecentBlocks failed")
 		return err
@@ -63,16 +64,16 @@ func (w *TransactionWorker) Start() error {
 					w.log.WithError(err).Error("Failed to get latest block number")
 					continue
 				}
-				err = w.client.LoadRecentBlocks(w.ctx, logs, startBlock, latestBlock)
+				err = w.client.LoadBlocks(w.ctx, logs, startBlock, latestBlock)
 				if err != nil {
-					w.log.WithError(err).Error("LoadRecentBlocks failed")
+					w.log.WithError(err).Error("LoadBlocks failed")
 				}
 				startBlock = latestBlock + 1
 			}
 		}
 	}()
 
-	w.log.Info("LoadRecentBlocks started successfully")
+	w.log.Info("LoadBlocks started successfully")
 	return nil
 }
 
@@ -110,7 +111,7 @@ func (w *TransactionWorker) consumeLogs(logs <-chan types.Log) {
 			w.log.WithFields(logan.F{
 				"from":  event.From.Hex(),
 				"to":    event.To.Hex(),
-				"value": event.Amount.Int64(),
+				"value": event.Value.Int64(),
 			}).Info("Saving USDC transaction")
 
 			err = w.saveTransaction(vLog, *event)
@@ -121,14 +122,14 @@ func (w *TransactionWorker) consumeLogs(logs <-chan types.Log) {
 	}
 }
 
-func (w *TransactionWorker) saveTransaction(vLog types.Log, event eth.TransferEvent) error {
+func (w *TransactionWorker) saveTransaction(vLog types.Log, event store.StoreTransfer) error {
 	w.log.Info("Saving USDC transaction")
 
 	tx := data.Transaction{
 		TxHash:      vLog.TxHash.Hex(),
 		FromAddress: event.From.Hex(),
 		ToAddress:   event.To.Hex(),
-		Values:      float64(event.Amount.Int64()),
+		Values:      float64(event.Value.Int64()),
 		Timestamp:   time.Now().Unix(),
 		BlockNumber: int64(vLog.BlockNumber),
 	}

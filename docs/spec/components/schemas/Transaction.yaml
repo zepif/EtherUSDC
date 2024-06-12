@@ -6,6 +6,7 @@ allOf:
       - toAddress
       - value
       - timestamp
+      - blockNumber
     properties:
       fromAddress:
         type: string
@@ -25,4 +26,7 @@ allOf:
         format: int64
         description: "Timestamp of the transaction"
         example: 1609459200
-
+      blockNumber:
+        type: integer
+        description: "Block number of the transaction"
+        example: 1234567

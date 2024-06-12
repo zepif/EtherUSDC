@@ -1,9 +1,8 @@
 type: object
 required:
-  - txHash
+  - id
 properties:
-  txHash:
-    type: string
-    description: "Hash of the transaction"
-    example: "0x123456789abcdef"
-
+  id:
+    type: integer
+    description: "Auto-incremented ID of the transaction"
+    example: 1

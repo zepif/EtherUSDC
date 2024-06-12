@@ -1,0 +1,30 @@
+parameters:
+  - name: id
+    in: path
+    required: true
+    description: ID of the transaction
+    schema:
+      type: integer
+
+get:
+  tags:
+    - Transfers
+  summary: Get Transfer by ID
+  description: Retrieve a specific USDC transfer by its ID
+  operationId: getTransferById
+  responses:
+    '200':
+      description: Success
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Transaction'
+    '400':
+      description: Invalid Request
+    '401':
+      description: Not Allowed
+    '404':
+      description: Not Found
+    '500':
+      description: Internal Error
+

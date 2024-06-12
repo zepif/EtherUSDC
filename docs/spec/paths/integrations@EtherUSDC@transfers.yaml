@@ -1,0 +1,83 @@
+parameters:
+  - name: from
+    in: query
+    description: Filter by sender address
+    schema:
+      type: string
+  - name: to
+    in: query
+    description: Filter by receiver address
+    schema:
+      type: string
+  - name: blockNumber
+    in: query
+    description: Filter by block number
+    schema:
+      type: integer
+  - name: txHash
+    in: query
+    description: Filter by transaction hash
+    schema:
+      type: string
+  - name: startTime
+    in: query
+    description: Filter transactions after this timestamp
+    schema:
+      type: integer
+      format: int64
+  - name: endTime
+    in: query
+    description: Filter transactions before this timestamp
+    schema:
+      type: integer
+      format: int64
+  - name: offset
+    in: query
+    description: Offset for pagination
+    schema:
+      type: integer
+      default: 1
+  - name: limit
+    in: query
+    description: Limit for pagination
+    schema:
+      type: integer
+      default: 10
+
+get:
+  tags:
+    - Transfers
+  summary: List Transfers
+  description: Retrieve a list of USDC transfers with filtering and pagination
+  operationId: listTransfers
+  responses:
+    '200':
+      description: Success
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+              limit:
+                type: integer
+                description: "Limit of transactions per page"
+                example: 10
+              offset:
+                type: integer
+                description: "Offset for pagination"
+                example: 1
+              totalRecords:
+                type: integer
+                description: "Total number of records"
+                example: 100
+    '400':
+      description: Invalid Request
+    '401':
+      description: Not Allowed
+    '500':
+      description: Internal Error
+

@@ -1,9 +1,0 @@
-type: object
-required:
-  - tx_hash
-properties:
-  tx_hash:
-    type: string
-    description: "Hash of the transaction"
-    example: "0x123456789abcdef"
-
