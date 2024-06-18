@@ -6,9 +6,7 @@ CREATE TABLE usdcTransactions (
     to_address VARCHAR(42) NOT NULL,
     value NUMERIC(38, 18) NOT NULL,
     timestamp BIGINT NOT NULL,
-    block_number BIGINT NOT NULL,
-
-    UNIQUE (tx_hash, from_address, to_address, value, timestamp, block_number)
+    block_number BIGINT NOT NULL
 );
 
 -- +migrate Down

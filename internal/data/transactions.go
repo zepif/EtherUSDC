@@ -7,11 +7,12 @@ type TransactionQ interface {
 
 	FilterByFromAddress(addresses ...string) TransactionQ
 	FilterByToAddress(addresses ...string) TransactionQ
-	FilterByTimestamp(start, end int64) TransactionQ
+	FilterByTimestampStart(start int64) TransactionQ
+	FilterByTimestampEnd(end int64) TransactionQ
 	FilterByTxHash(txHash string) TransactionQ
 	FilterByBlockNumber(blockNumber int64) TransactionQ
 
-	Page(limit, offset int) TransactionQ
+	Page(limit, offset uint64) TransactionQ
 }
 
 type Transaction struct {

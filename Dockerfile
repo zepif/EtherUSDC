@@ -14,4 +14,5 @@ FROM alpine:3.9
 COPY --from=buildbase /usr/local/bin/EtherUSDC /usr/local/bin/EtherUSDC
 RUN apk add --no-cache ca-certificates
 
-ENTRYPOINT ["EtherUSDC"]
+# ENTRYPOINT ["EtherUSDC"]
+CMD ["EtherUSDC"]

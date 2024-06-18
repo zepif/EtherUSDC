@@ -1,49 +1,48 @@
 parameters:
-  - name: from
+  - name: filter[from]
     in: query
     description: Filter by sender address
     schema:
       type: string
-  - name: to
+  - name: filter[to]
     in: query
     description: Filter by receiver address
     schema:
       type: string
-  - name: blockNumber
+  - name: filter[blockNumber]
     in: query
     description: Filter by block number
     schema:
       type: integer
-  - name: txHash
+  - name: filter[txHash]
     in: query
     description: Filter by transaction hash
     schema:
       type: string
-  - name: startTime
+  - name: filter[startTime]
     in: query
     description: Filter transactions after this timestamp
     schema:
       type: integer
       format: int64
-  - name: endTime
+  - name: filter[endTime]
     in: query
     description: Filter transactions before this timestamp
     schema:
       type: integer
       format: int64
-  - name: offset
+  - name: page[number]
     in: query
-    description: Offset for pagination
+    description: Page number for pagination
     schema:
       type: integer
       default: 1
-  - name: limit
+  - name: page[size]
     in: query
-    description: Limit for pagination
+    description: Page size for pagination
     schema:
       type: integer
       default: 10
-
 get:
   tags:
     - Transfers
@@ -62,14 +61,17 @@ get:
                 type: array
                 items:
                   $ref: '#/components/schemas/Transaction'
-              limit:
-                type: integer
-                description: "Limit of transactions per page"
-                example: 10
-              offset:
-                type: integer
-                description: "Offset for pagination"
-                example: 1
+              page:
+                type: object
+                properties:
+                  size:
+                    type: integer
+                    description: "Number of transactions per page"
+                    example: 10
+                  number:
+                    type: integer
+                    description: "Current page number"
+                    example: 1
               totalRecords:
                 type: integer
                 description: "Total number of records"
@@ -80,4 +82,3 @@ get:
       description: Not Allowed
     '500':
       description: Internal Error
-

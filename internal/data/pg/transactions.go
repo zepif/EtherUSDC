@@ -75,11 +75,13 @@ func (q *TransactionQ) FilterByToAddress(addresses ...string) data.TransactionQ 
 	return q
 }
 
-func (q *TransactionQ) FilterByTimestamp(start, end int64) data.TransactionQ {
-	q.sql = q.sql.Where(sq.And{
-		sq.GtOrEq{"timestamp": start},
-		sq.LtOrEq{"timestamp": end},
-	})
+func (q *TransactionQ) FilterByTimestampStart(start int64) data.TransactionQ {
+	q.sql = q.sql.Where(sq.GtOrEq{"timestamp": start})
+	return q
+}
+
+func (q *TransactionQ) FilterByTimestampEnd(end int64) data.TransactionQ {
+	q.sql = q.sql.Where(sq.LtOrEq{"timestamp": end})
 	return q
 }
 
@@ -93,7 +95,7 @@ func (q *TransactionQ) FilterByBlockNumber(blockNumber int64) data.TransactionQ 
 	return q
 }
 
-func (q *TransactionQ) Page(limit, offset int) data.TransactionQ {
-	q.sql = q.sql.Limit(uint64(limit)).Offset(uint64(offset))
+func (q *TransactionQ) Page(limit, offset uint64) data.TransactionQ {
+	q.sql = q.sql.OrderBy("id").Limit(limit).Offset(offset)
 	return q
 }

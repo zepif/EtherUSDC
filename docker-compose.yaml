@@ -1,28 +1,29 @@
 version: '3.9'
-
 services:
-
   db:
     image: postgres:12
     environment:
-      - POSTGRES_DB: ${POSTGRES_DATABASE}
-      - POSTGRES_USER: ${POSTGRES_USER}
-      - POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DATABASE}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - db-data:/var/lib/postgresql/data
+    restart: on-failure
 
   service:
-    image: registry.https://github.com/zepif/EtherUSDC
+    build: .
     environment:
-      KV_VIPER_FILE: ./config.yaml
+      KV_VIPER_FILE: ./config.local.yaml
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DATABASE}?sslmode=disable
     depends_on:
       - db
     volumes:
-      - ./config.yaml:./config.yaml
+      - /home/acer/go/src/gitlab.com/zepif/EtherUSDC/config.yaml:/config.local.yaml
+    command: /bin/sh -c "EtherUSDC migrate up && EtherUSDC run service"
+    restart: on-failure
 
   nginx:
-    image: nginx:latest
+    image: nginx:1.23.1
     env_file:
       - .env
     restart: unless-stopped
@@ -30,9 +31,10 @@ services:
       - "8000:80"   # http
       - "8443:443"  # https
     volumes:
-      - ./nginx.conf:./nginx.conf
+      - /home/acer/go/src/gitlab.com/zepif/EtherUSDC/nginx.conf:/nginx.conf
     depends_on:
       - service
 
 volumes:
   db-data:
+

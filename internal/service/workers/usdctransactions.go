@@ -68,7 +68,7 @@ func (w *TransactionWorker) Start() error {
 				if err != nil {
 					w.log.WithError(err).Error("LoadBlocks failed")
 				}
-				startBlock = latestBlock + 1
+				startBlock = latestBlock - 1
 			}
 		}
 	}()
