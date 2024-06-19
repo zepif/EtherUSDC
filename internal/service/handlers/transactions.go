@@ -37,7 +37,7 @@ func GetTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("transaction with id %d retrieved", request.ID)
+	log.WithField("transaction_id", request.ID).Info("transaction retrieved")
 	ape.Render(w, tx)
 }
 
