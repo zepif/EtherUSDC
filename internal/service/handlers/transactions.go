@@ -14,7 +14,7 @@ import (
 var c = cache.New(5*time.Minute, 10*time.Minute)
 
 type GetTransactionByIDRequest struct {
-	ID int64 `url:"id" validate:"required,min=1"`
+	ID int64 `url:"id"`
 }
 
 func GetTransaction(w http.ResponseWriter, r *http.Request) {
