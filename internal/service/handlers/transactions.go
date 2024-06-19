@@ -2,16 +2,12 @@ package handlers
 
 import (
 	"net/http"
-	"time"
 
-	cache "github.com/patrickmn/go-cache"
 	"gitlab.com/distributed_lab/ape"
 	"gitlab.com/distributed_lab/ape/problems"
 	"gitlab.com/distributed_lab/logan/v3"
 	"gitlab.com/distributed_lab/urlval"
 )
-
-var c = cache.New(5*time.Minute, 10*time.Minute)
 
 type GetTransactionByIDRequest struct {
 	ID int64 `url:"id"`
