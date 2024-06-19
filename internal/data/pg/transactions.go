@@ -24,6 +24,19 @@ type TransactionQ struct {
 	sql sq.SelectBuilder
 }
 
+func (q *TransactionQ) GetByID(id int64) (*data.Transaction, error) {
+	var tx data.Transaction
+	query := q.sql.Where(sq.Eq{"id": id})
+	err := q.db.Get(&tx, query)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &tx, nil
+}
+
 func (q *TransactionQ) Get(txHash string) ([]data.Transaction, error) {
 	var txs []data.Transaction
 	query := q.sql.Where(sq.Eq{"tx_hash": txHash})

@@ -2,12 +2,48 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
+	cache "github.com/patrickmn/go-cache"
 	"gitlab.com/distributed_lab/ape"
 	"gitlab.com/distributed_lab/ape/problems"
 	"gitlab.com/distributed_lab/logan/v3"
 	"gitlab.com/distributed_lab/urlval"
 )
+
+var c = cache.New(5*time.Minute, 10*time.Minute)
+
+type GetTransactionByIDRequest struct {
+	ID int64 `url:"id" validate:"required,min=1"`
+}
+
+func GetTransaction(w http.ResponseWriter, r *http.Request) {
+	log := Log(r)
+
+	var request GetTransactionByIDRequest
+	if err := urlval.Decode(r.URL.Query(), &request); err != nil {
+		log.WithError(err).Error("failed to decode request parameters")
+		ape.RenderErr(w, problems.InternalError())
+		return
+	}
+
+	d := DB(r).TransactionQ()
+	tx, err := d.GetByID(request.ID)
+	if err != nil {
+		log.WithError(err).Error("failed to get transaction by id")
+		ape.RenderErr(w, problems.InternalError())
+		return
+	}
+
+	if tx == nil {
+		log.Warnf("transaction with id %d not found", request.ID)
+		ape.RenderErr(w, problems.NotFound())
+		return
+	}
+
+	log.Infof("transaction with id %d retrieved", request.ID)
+	ape.Render(w, tx)
+}
 
 type TransactionsListRequest struct {
 	FromAddress *string `url:"fromAddress"`

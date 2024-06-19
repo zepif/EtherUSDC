@@ -2,6 +2,7 @@ package data
 
 type TransactionQ interface {
 	Get(txHash string) ([]Transaction, error)
+	GetByID(id int64) (*Transaction, error)
 	Select(filters ...TransactionFilter) ([]Transaction, error)
 	Insert(tx Transaction) (*Transaction, error)
 
