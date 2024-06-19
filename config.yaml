@@ -5,7 +5,7 @@ db:
   url: postgres://...@.../...?sslmode=disable
 
 listener:
-  addr: :8000
+  addr: :8080
 
 cop:
   disabled: true
@@ -15,6 +15,6 @@ cop:
   service_port: 80
 
 eth:
-  EthRPC: "your eth rpc values"
-  EthContractAddress: "your eth contract address value"
-  EthContractABI: "your eth contract abi value"
+  eth_rpc: "your eth rpc values here" 
+  eth_contract_address: "your eth contract address here"
+  eth_block: "your number of the starting block to be processed"
