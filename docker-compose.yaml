@@ -1,4 +1,4 @@
-version: '3.9'
+# version: '3.9'
 services:
   db:
     image: postgres:12
@@ -6,6 +6,8 @@ services:
       - POSTGRES_DB=${POSTGRES_DATABASE}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     restart: on-failure
@@ -14,12 +16,12 @@ services:
     build: .
     environment:
       KV_VIPER_FILE: ./config.local.yaml
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db/${POSTGRES_DATABASE}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DATABASE}?sslmode=disable
     depends_on:
       - db
     volumes:
-      - /home/acer/go/src/gitlab.com/zepif/EtherUSDC/config.yaml:/config.local.yaml
-    command: /bin/sh -c "EtherUSDC migrate up && EtherUSDC run service"
+      - /home/acer/go/src/gitlab.com/zepif/EtherUSDC/config.local.yaml:/config.local.yaml
+    command: /bin/sh -c "usr/local/bin/start.sh"
     restart: on-failure
 
   nginx:
@@ -38,3 +40,6 @@ services:
 volumes:
   db-data:
 
+networks:
+  default:
+    driver: bridge
