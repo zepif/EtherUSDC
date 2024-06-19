@@ -3,6 +3,7 @@ package eth
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"strings"
 
 	"github.com/ethereum/go-ethereum"
@@ -52,10 +53,11 @@ func NewEthClient(cfg config.Config) (*EthClient, error) {
 	}, nil
 }
 
-func (e *EthClient) SubscribeLogs(ctx context.Context, logs chan<- types.Log) (ethereum.Subscription, error) {
+func (e *EthClient) SubscribeLogs(ctx context.Context, logs chan<- types.Log, startBlock uint64) (ethereum.Subscription, error) {
 	query := ethereum.FilterQuery{
 		Addresses: []common.Address{e.Address},
 		Topics:    [][]common.Hash{{e.TransferEventID}},
+		FromBlock: new(big.Int).SetUint64(startBlock),
 	}
 
 	sub, err := e.Client.SubscribeFilterLogs(ctx, query, logs)

@@ -39,7 +39,7 @@ func NewTransactionWorker(log *logan.Entry, db data.MasterQ, client *eth.EthClie
 func (w *TransactionWorker) Start() error {
 	logs := make(chan types.Log, 100)
 
-	sub, err := w.client.SubscribeLogs(w.ctx, logs)
+	sub, err := w.client.SubscribeLogs(w.ctx, logs, w.startBlock)
 	if err != nil {
 		w.log.WithError(err).Error("Failed to subscribe to logs")
 		return err
