@@ -38,37 +38,27 @@ func NewTransactionWorker(log *logan.Entry, db data.MasterQ, client *eth.EthClie
 
 func (w *TransactionWorker) Start() error {
 	logs := make(chan types.Log, 100)
+
+	sub, err := w.client.SubscribeLogs(w.ctx, logs)
+	if err != nil {
+		w.log.WithError(err).Error("Failed to subscribe to logs")
+		return err
+	}
+
 	go w.consumeLogs(logs)
 
-	latestBlock, err := w.client.Client.BlockNumber(w.ctx)
-	if err != nil {
-		w.log.WithError(err).Error("Failed to get latest block number")
-		return err
-	}
-	startBlock := w.startBlock
-
-	err = w.client.LoadBlocks(w.ctx, logs, startBlock, latestBlock)
-	if err != nil {
-		w.log.WithError(err).Error("LoadRecentBlocks failed")
-		return err
-	}
+	w.log.Info("SubscribeLogs started successfully")
 
 	go func() {
 		for {
 			select {
-			case <-w.ctx.Done():
+			case err := <-sub.Err():
+				w.log.WithError(err).Error("Subscription error")
 				return
-			case <-time.After(time.Second):
-				latestBlock, err := w.client.Client.BlockNumber(w.ctx)
-				if err != nil {
-					w.log.WithError(err).Error("Failed to get latest block number")
-					continue
-				}
-				err = w.client.LoadBlocks(w.ctx, logs, startBlock, latestBlock)
-				if err != nil {
-					w.log.WithError(err).Error("LoadBlocks failed")
-				}
-				startBlock = latestBlock - 1
+			case <-w.ctx.Done():
+				w.log.Info("Context canceled, stopping subscription")
+				sub.Unsubscribe()
+				return
 			}
 		}
 	}()

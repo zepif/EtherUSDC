@@ -3,8 +3,10 @@ package eth
 import (
 	"context"
 	"fmt"
+	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -14,10 +16,23 @@ import (
 	"gitlab.com/distributed_lab/logan/v3/errors"
 )
 
+var TransferEventID common.Hash
+
+func init() {
+	const StoreABI = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}]`
+	parsedABI, err := abi.JSON(strings.NewReader(StoreABI))
+	if err != nil {
+		panic(err)
+	}
+	TransferEventID = parsedABI.Events["Transfer"].ID
+}
+
 type EthClient struct {
-	Client   *ethclient.Client
-	Contract *store.Store
-	log      *logan.Entry
+	Client          *ethclient.Client
+	Contract        *store.Store
+	Address         common.Address
+	TransferEventID common.Hash
+	log             *logan.Entry
 }
 
 func NewEthClient(cfg config.Config) (*EthClient, error) {
@@ -33,51 +48,38 @@ func NewEthClient(cfg config.Config) (*EthClient, error) {
 		return nil, errors.Wrap(err, "failed to instantiate a Store contract")
 	}
 
+	parsedABI, err := abi.JSON(strings.NewReader(store.StoreMetaData.ABI))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse contract ABI")
+	}
+	transferEventID := parsedABI.Events["Transfer"].ID
+
 	return &EthClient{
-		Client:   client,
-		Contract: contract,
-		log:      cfg.Log().WithField("component", "eth_client"),
+		Client:          client,
+		Contract:        contract,
+		Address:         contractAddress,
+		TransferEventID: transferEventID,
+		log:             cfg.Log().WithField("component", "eth_client"),
 	}, nil
 }
 
-func (e *EthClient) LoadBlocks(ctx context.Context, logs chan<- types.Log, startBlock uint64, endBlock uint64) error {
-	opts := &bind.FilterOpts{
-		Start:   startBlock,
-		End:     &endBlock,
-		Context: ctx,
+func (e *EthClient) SubscribeLogs(ctx context.Context, logs chan<- types.Log) (ethereum.Subscription, error) {
+	query := ethereum.FilterQuery{
+		Addresses: []common.Address{e.Address},
+		Topics:    [][]common.Hash{{e.TransferEventID}},
 	}
 
-	events, err := e.Contract.FilterTransfer(opts, nil, nil)
+	sub, err := e.Client.SubscribeFilterLogs(ctx, query, logs)
 	if err != nil {
-		return errors.Wrap(err, "failed to filter transfer events")
+		return nil, errors.Wrap(err, "failed to subscribe to logs")
 	}
 
-	eventCount := 0
-	for events.Next() {
-		event := events.Event
-		logs <- types.Log{
-			Address:     event.Raw.Address,
-			Topics:      event.Raw.Topics,
-			Data:        event.Raw.Data,
-			BlockNumber: event.Raw.BlockNumber,
-			TxHash:      event.Raw.TxHash,
-			Index:       event.Raw.Index,
-		}
-		eventCount++
-	}
+	go func() {
+		<-ctx.Done()
+		sub.Unsubscribe()
+	}()
 
-	if events.Error() != nil {
-		e.log.WithError(events.Error()).Error("Error encountered while filtering transfer events")
-		return errors.Wrap(events.Error(), "error encountered while filtering transfer events")
-	}
-
-	e.log.WithFields(logan.F{
-		"startBlock": startBlock,
-		"endBlock":   endBlock,
-		"eventCount": eventCount,
-	}).Info("Finished loading blocks")
-
-	return nil
+	return sub, nil
 }
 
 func (e *EthClient) ParseTransferEvent(vLog types.Log) (*store.StoreTransfer, error) {
