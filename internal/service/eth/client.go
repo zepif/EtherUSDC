@@ -16,17 +16,6 @@ import (
 	"gitlab.com/distributed_lab/logan/v3/errors"
 )
 
-var TransferEventID common.Hash
-
-func init() {
-	const StoreABI = `[{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"}]`
-	parsedABI, err := abi.JSON(strings.NewReader(StoreABI))
-	if err != nil {
-		panic(err)
-	}
-	TransferEventID = parsedABI.Events["Transfer"].ID
-}
-
 type EthClient struct {
 	Client          *ethclient.Client
 	Contract        *store.Store
